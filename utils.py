@@ -5,16 +5,14 @@ import io
 import streamlit as st
 
 # Colunas que você não quer mostrar na pré-visualização
-colunas_ignoradas = {
+COLUNAS_IGNORADAS = {
     "Mess 1", "Knock", "A/C Input", "Start Input", "Outputs 1",
     "Outputs 2", "Lambda 2", "Mess 2", "Strobo Angle", "ACC %",
     "ACP %", "dACC %", "0", "0_1"
 }
 
 def deduplicar_nomes(colunas):
-    """
-    Garante nomes únicos de coluna, adicionando sufixos _1, _2...
-    """
+    """Garante nomes únicos de coluna, adicionando sufixos _1, _2..."""
     contagem = Counter()
     novas = []
     for nome in colunas:
@@ -27,88 +25,57 @@ def deduplicar_nomes(colunas):
 
 def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
     """
-    Divide o CSV em blocos sempre que encontrar uma linha começando com "Mess",
-    gera um DataFrame para cada bloco e aplica todas as transformações.
-    Retorna (lista_de_logs, None) ou (None, erro).
+    Divide o CSV em blocos ao encontrar 'Mess...', retorna (logs, None) ou (None, erro).
+    Cada log é dict com: nome, key, df (completo) e df_visivel.
     """
     try:
-        # 1) Leitura e limpeza das linhas
         content   = arquivo.getvalue().decode("utf-8")
         raw_lines = [l for l in content.splitlines() if l.strip()]
-        logs      = []
-        i = 0
+        logs = []; i = 0
 
-        # 2) Loop principal: busca cada linha de cabeçalho "Mess"
         while i < len(raw_lines):
             line = raw_lines[i].strip()
             if line.startswith("Mess"):
-                # 2.1) Deduplica nomes de colunas e extrai "Mess X"
                 headers   = deduplicar_nomes(line.split(";"))
-                nome_mess = headers[0]  # e.g. "Mess 1"
-
-                # 2.2) Coleta as linhas de dados até o próximo "Mess" ou EOF
-                j = i + 1
-                segmento = []
+                nome_mess = headers[0]
+                j = i + 1; bloco = []
                 while j < len(raw_lines) and not raw_lines[j].strip().startswith("Mess"):
-                    segmento.append(raw_lines[j])
-                    j += 1
+                    bloco.append(raw_lines[j]); j += 1
 
-                # 2.3) Lê o bloco como CSV
-                df = pd.read_csv(io.StringIO("\n".join(segmento)), sep=";", names=headers)
+                df = pd.read_csv(io.StringIO("\n".join(bloco)), sep=";", names=headers)
+                for c in df.columns:
+                    df[c] = pd.to_numeric(df[c].astype(str).str.replace(",", "."), errors="coerce")
 
-                # 3) Converte tudo para numérico (comma→dot)
-                for col in df.columns:
-                    df[col] = pd.to_numeric(
-                        df[col].astype(str).str.replace(",", ".", regex=False),
-                        errors="coerce"
-                    )
+                # ajustes originais
+                if "Batt Volt." in df: df["Batt Volt."] = (df["Batt Volt."] / 10).round(1)
+                for tcol in ("CLT","IAT"):
+                    if tcol in df: df[tcol] = (df[tcol] - 273.15).round(0)
+                for lcol in ("Lambda 1","Lambda Target"):
+                    if lcol in df:
+                        df[lcol] = (df[lcol]/1000).round(2)
+                        df[lcol] = df[lcol].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
 
-                # 4) Suas transformações originais
-                if "Batt Volt." in df.columns:
-                    df["Batt Volt."] = (df["Batt Volt."] / 10).round(1)
-                for col_temp in ["CLT", "IAT"]:
-                    if col_temp in df.columns:
-                        df[col_temp] = (df[col_temp] - 273.15).round(0)
-                for col in ["Lambda 1", "Lambda Target"]:
-                    if col in df.columns:
-                        df[col] = (df[col] / 1000).round(2)
-                        df[col] = df[col].apply(lambda x: f"{x:.2f}" if pd.notna(x) else "")
-
-                # VE Corrigido
-                if {"Lambda Corr", "VE Value"}.issubset(df.columns):
+                if {"Lambda Corr","VE Value"}.issubset(df.columns):
                     df["VE Corrigido"] = None
-                    mask = (df["Lambda Loop"] != 0) if "Lambda Loop" in df.columns else True
-                    df.loc[mask, "VE Corrigido"] = (
-                        (df.loc[mask, "Lambda Corr"] / 1000 * df.loc[mask, "VE Value"])
-                        * combustivel_extra
+                    mask = df.get("Lambda Loop", pd.Series(1,index=df.index)) != 0
+                    df.loc[mask,"VE Corrigido"] = (
+                        df.loc[mask,"Lambda Corr"]/1000 * df.loc[mask,"VE Value"] * combustivel_extra
                     ).round(0).astype("Int64")
 
-                # Correção percentual
                 if "Lambda Corr" in df.columns:
-                    def calc_corr(row):
-                        if row.get("Lambda Loop", 1) == 0:
-                            return None
-                        lc = row["Lambda Corr"] / 1000
-                        if pd.isna(lc):
-                            return None
-                        pct = (lc - 1) * 100
-                        sinal = "+" if pct > 0 else "-"
-                        return f"{sinal}{abs(pct):.2f}%"
-                    df["Correção (%)"] = df.apply(calc_corr, axis=1)
+                    def pct(r):
+                        if r.get("Lambda Loop",1)==0 or pd.isna(r["Lambda Corr"]): return None
+                        val=(r["Lambda Corr"]/1000-1)*100; s="+" if val>0 else "-"
+                        return f"{s}{abs(val):.2f}%"
+                    df["Correção (%)"] = df.apply(pct,axis=1)
 
-                # 5) Prepara DataFrame visível
-                vis_cols = [c for c in df.columns if c not in colunas_ignoradas]
-                df_vis   = df[vis_cols]
-
-                # 6) Armazena o bloco
+                vis = df[[c for c in df.columns if c not in COLUNAS_IGNORADAS]]
                 logs.append({
-                "nome": nome_mess,
-                "key":  f"{nome_mess.replace(' ','_')}_{len(logs)+1}",
-                "df": df,
-                "df_visivel": df_vis
-            })
-
-                # 7) Avança para o próximo bloco
+                    "nome": nome_mess,
+                    "key": f"{nome_mess.replace(' ','_')}_{len(logs)+1}",
+                    "df": df,
+                    "df_visivel": vis
+                })
                 i = j
             else:
                 i += 1
@@ -118,69 +85,57 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
     except Exception as e:
         return None, e
 
-
 def gerar_grafico(df, colunas, rpm_col="RPM"):
     """
-    Se 'RPM' estiver em colunas, plota em eixo Y2 (direita).
-    As demais colunas vão para o eixo Y1 (esquerda).
+    Dual-axis: RPM no eixo direito; outras séries no esquerdo, 
+    escaladas para que cada pico atinja o topo do eixo Y1.
+    Hover mostra o valor real.
     """
+    left_cols = [c for c in colunas if c != rpm_col]
+    # calculo máximos
+    max_vals   = {c: df[c].max() for c in left_cols} if left_cols else {}
+    global_max = max(max_vals.values()) if max_vals else None
+
     fig = go.Figure()
-
-    # 1) traços para todas as colunas, menos RPM, usando yaxis="y1"
-    for col in colunas:
-        if col != rpm_col:
-            fig.add_trace(
-                go.Scatter(
-                    x=df.index,
-                    y=df[col],
-                    name=col,
-                    yaxis="y1",
-                    mode="lines",
-                    connectgaps=False,
-                    hovertemplate=f"<b>{col}</b><br>Valor: %{{y}}<extra></extra>"
-                )
+    # traçar cada série esquerda escalada
+    for c in left_cols:
+        factor = (global_max / max_vals[c]) if (global_max and max_vals[c]) else 1
+        scaled = df[c] * factor
+        fig.add_trace(go.Scatter(
+            x=df.index, y=scaled, name=c, yaxis="y1",
+            mode="lines", connectgaps=False,
+            customdata=df[c],
+            hovertemplate=(
+                f"<b>{c}</b><br>"
+                "Real: %{customdata}<br>"
+                "Escalado: %{y:.2f}<extra></extra>"
             )
-
-    # 2) se RPM estiver na lista, plota esse trace em yaxis="y2"
+        ))
+    # traçar RPM normal
     if rpm_col in colunas and rpm_col in df.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=df.index,
-                y=df[rpm_col],
-                name=rpm_col,
-                yaxis="y2",
-                line=dict(color="crimson", width=2),
-                mode="lines",
-                connectgaps=False,
-                hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
-            )
-        )
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df[rpm_col], name=rpm_col, yaxis="y2",
+            line=dict(color="crimson", width=2),
+            mode="lines", connectgaps=False,
+            hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
+        ))
 
-    # 3) configura layout com dois eixos
-    fig.update_layout(
+    # layout com range automático no y1
+    layout = dict(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Outros sinais",
+            title="Séries escaladas",
             side="left",
             showgrid=True,
+            range=[0, global_max*1.05] if global_max else None
         ),
         yaxis2=dict(
-            title=rpm_col,
-            overlaying="y",
-            side="right",
-            showgrid=False,
+            title=rpm_col if rpm_col else "", overlaying="y", side="right", showgrid=False
         ),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(l=40, r=40, t=30, b=40),
-        height=450,
-        template="plotly_white",
-        hovermode="x unified",
+        height=450, hovermode="x unified", template="plotly_white"
     )
+    fig.update_layout(**layout)
 
     st.plotly_chart(fig, use_container_width=True)
