@@ -99,11 +99,21 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
     for c in left_cols:
         real = pd.to_numeric(df[c], errors="coerce")
         if c == lambda_col:
-            y_plot = real * 1000
-            hover_template = (
-                f"<b></b><br>"
-                "Valor: %{customdata:.2f}<br>"
-                           )
+            # Hover só com o nome em negrito e o valor real com 2 casas
+            hover_template = "<b>Lambda 1</b><br>Valor: %{customdata:.2f}<extra></extra>"
+        else:
+            hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
+        
+        fig.add_trace(go.Scatter(
+            x=df.index,
+            y=y_plot,
+            name=c,
+            yaxis="y1",
+            mode="lines",
+            connectgaps=False,
+            customdata=real,
+            hovertemplate=hover_template
+        ))
         else:
             y_plot = real
             hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
