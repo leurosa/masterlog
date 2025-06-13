@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 from collections import Counter
 import io
 import streamlit as st
+import math
 
 # Colunas que você não quer mostrar na pré-visualização
 COLUNAS_IGNORADAS = {
@@ -88,12 +89,12 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
 def gerar_grafico(df, colunas, rpm_col="RPM"):
     """
     Dual-axis: RPM no eixo direito; outras séries no esquerdo, 
-    com eixo Y1 arredondado e ticks “bonitos”.
+    com eixo Y1 “bonito” (máximo arredondado e ticks uniformes).
     """
-    # 1) Seleção de colunas
+    # 1) Colunas do lado esquerdo
     left_cols = [c for c in colunas if c != rpm_col]
 
-    # 2) Cálculo do máximo real para o eixo esquerdo
+    # 2) Calcula o máximo real
     max_left = None
     if left_cols:
         vals = []
@@ -104,19 +105,17 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
         if vals:
             max_left = max(vals)
 
-    # 3) Arredonda max_left para “número bonito”
+    # 3) Arredonda para um “número bonito” e define dtick
     if max_left:
         magnitude = 10 ** math.floor(math.log10(max_left))
-        nice_max = math.ceil(max_left / magnitude) * magnitude
-        # cria de 5 a 8 intervalos
-        dtick = nice_max / 5
+        nice_max  = math.ceil(max_left / magnitude) * magnitude
+        dtick     = nice_max / 5
     else:
         nice_max = None
-        dtick = None
+        dtick    = None
 
+    # 4) Cria a figura e plota as séries reais
     fig = go.Figure()
-
-    # 4) Plot das séries reais no eixo esquerdo
     for c in left_cols:
         fig.add_trace(go.Scatter(
             x=df.index,
@@ -127,8 +126,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             connectgaps=False,
             hovertemplate=f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
         ))
-
-    # 5) Plot da RPM no eixo direito
+    # RPM no eixo direito
     if rpm_col in colunas and rpm_col in df.columns:
         fig.add_trace(go.Scatter(
             x=df.index,
@@ -141,7 +139,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # 6) Layout com eixo Y1 “bonito”
+    # 5) Layout com eixo Y1 “bonito”
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
