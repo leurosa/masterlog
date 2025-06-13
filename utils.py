@@ -164,7 +164,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             title=rpm_col, overlaying="y", side="right",
             showgrid=False, autorange=True
         ),
-        legend   = dict(orientation="h", yanchor="top", y=1.02, xanchor="left", x=1),
+        legend   = dict(orientation="v", yanchor="top", y=1.02, xanchor="left", x=1),
         margin   = dict(l=50, r=50, t=30, b=40),
         height   = 450,
         hovermode= "x unified",
