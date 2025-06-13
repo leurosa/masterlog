@@ -101,7 +101,8 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
         if c == lambda_col:
             y_plot = real * 1000
             hover_template = (
-                f"<b>{c}</b><br>Valor: %{customdata:.2f}"
+                f"<b></b><br>"
+                "Valor: %{customdata:.2f}<br>"
                            )
         else:
             y_plot = real
