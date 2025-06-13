@@ -70,9 +70,9 @@ if arquivo:
             with aba:
                 mostrar_previsualizacao(log["df_visivel"], key_prefix=log["key"])
                 sel = st.multiselect(
-                    "📊 Selecione até 4 colunas",
+                    "📊 Selecione as colunas desejadas",
                     log["df_visivel"].columns,
-                    max_selections=4,
+                    max_selections=20,
                     key=f"ms_{log['key']}"
                 )
                 if sel:
