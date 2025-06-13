@@ -87,11 +87,7 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
-    """
-    Dual-axis:
-     - RPM no eixo Y2 (direito), escala real.
-     - Outras séries no Y1 (esquerdo), com Lambda 1 multiplicado por 1000.
-    """
+ 
     left_cols = [c for c in colunas if c != rpm_col]
     special     = {"Lambda 1", "Lambda Target"}
     fig = go.Figure()
