@@ -178,7 +178,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             overlaying="y",
             side="right",
             showgrid=False,
-            autorange=True
+            autorange=True,
             showticklabels=False,
             ticks=""
         ),
