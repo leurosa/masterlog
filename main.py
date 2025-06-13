@@ -40,7 +40,7 @@ if not st.session_state.logged_in:
 st.sidebar.success(f"✔️ Logado como `{st.session_state.username}`")
 st.title("📊 Master Log Viewer")
 
-
+# 2) upload
 arquivo = st.file_uploader("📂 Envie o arquivo CSV do log", type="csv")
 
 if arquivo:
@@ -51,19 +51,18 @@ if arquivo:
     elif not logs:
         st.warning("⚠️ Nenhum log foi encontrado no arquivo.")
     else:
+        # 3) cria abas e itera sobre logs
         abas = st.tabs([log["nome"] for log in logs])
         for aba, log in zip(abas, logs):
             with aba:
-                df = log["df"]
-                df_visivel = log["df_visivel"]
-
-                mostrar_previsualizacao(df_visivel, nome_log=log["nome"])
-
+                # usa a key gerada no utils.py
+                mostrar_previsualizacao(log["df_visivel"],
+                                       key_prefix=log["key"])
                 eixo_y = st.multiselect(
-                    "📊 Selecione até 4 colunas para o gráfico",
-                    df_visivel.columns,
+                    "📊 Selecione até 4 colunas",
+                    log["df_visivel"].columns,
                     max_selections=4,
-                    key=log["nome"]
+                    key=f"multiselect_{log['key']}"
                 )
                 if eixo_y:
-                    gerar_grafico(df, eixo_y)
+                    gerar_grafico(log["df"], eixo_y)
