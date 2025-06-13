@@ -146,6 +146,12 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
 
     # 4) Layout final
     fig.update_layout(
+        hovermode="x unified",                  # um só box para todas as séries
+        hoverlabel=dict(
+            align="left",                       # texto alinhado à esquerda
+            bgcolor="rgba(0,0,0,0.7)",          # opcional: fundo escuro/sem transparente
+            font_size=12                        # opcional: tamanho de fonte
+        )
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
             title="Valores (Y1)",
