@@ -103,8 +103,8 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
     multipliers = {
         "Lambda 1": 1000,
         "Lambda Target": 1000,
-        "MAP": 20,
-        "Boost": 20
+        "MAP": 40,
+        "Boost": 40
     }
 
     fig = go.Figure()
@@ -116,7 +116,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
         y_plot = real * mult
 
         # Escolhe formatação de hover conforme a coluna
-        if c == "MAP && Boost":
+        if c == "MAP & Boost":
             hover = f"<b>{c}</b><br>Valor: %{{customdata:.0f}}<extra></extra>"
         else:
             hover = f"<b>{c}</b><br>Valor: %{{customdata:.2f}}<extra></extra>"
