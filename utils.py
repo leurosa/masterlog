@@ -88,7 +88,7 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
     left_cols  = [c for c in colunas if c != rpm_col]
-    special    = {"Lambda 1", "Lambda Target","MAP"}
+    special    = {"Lambda 1", "Lambda Target"}
     multiplier = 1000
     fig = go.Figure()
 
