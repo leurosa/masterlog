@@ -4,17 +4,27 @@ import os
 from utils import processar_multiplos_logs, gerar_grafico
 from ui import mostrar_previsualizacao
 
+# 1) CONFIGURAÇÃO DA PÁGINA — deve ser a primeira coisa do app!
+st.set_page_config(
+    page_title="Master Log Viewer",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# 2) BUSCA CREDENCIAIS NO SECRETS (Streamlit Cloud)
 creds = st.secrets.get("credentials", {})
 if not creds:
     st.error("❌ Seção [credentials] não encontrada em Secrets")
     st.stop()
 
+# 3) ESTADO DE LOGIN
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
 
+# 4) TELA DE LOGIN
 def show_login():
     st.title("🔒 Master Log Viewer — Login")
     user = st.text_input("Usuário", value=st.session_state.username)
@@ -25,25 +35,17 @@ def show_login():
             st.session_state.username = user
         else:
             st.error("Usuário ou senha inválidos")
-
     st.stop()
 
 if not st.session_state.logged_in:
     show_login()
 
-
+# 5) APP PRINCIPAL (só roda quando logado)
 st.sidebar.success(f"✔️ Logado como `{st.session_state.username}`")
-st.set_page_config(
-    page_title="Master Log Viewer",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 st.title("📊 Master Log Viewer")
 
-# 2) upload
+# 6) UPLOAD E PROCESSAMENTO DE LOGS
 arquivo = st.file_uploader("📂 Envie o arquivo CSV do log", type="csv")
-
 if arquivo:
     logs, erro = processar_multiplos_logs(arquivo)
 
@@ -52,13 +54,13 @@ if arquivo:
     elif not logs:
         st.warning("⚠️ Nenhum log foi encontrado no arquivo.")
     else:
-        # 3) cria abas e itera sobre logs
         abas = st.tabs([log["nome"] for log in logs])
         for aba, log in zip(abas, logs):
             with aba:
-                # usa a key gerada no utils.py
-                mostrar_previsualizacao(log["df_visivel"],
-                                       key_prefix=log["key"])
+                mostrar_previsualizacao(
+                    log["df_visivel"],
+                    key_prefix=log["key"]
+                )
                 eixo_y = st.multiselect(
                     "📊 Selecione até 4 colunas",
                     log["df_visivel"].columns,
