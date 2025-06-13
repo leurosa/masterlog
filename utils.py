@@ -86,28 +86,41 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
     except Exception as e:
         return None, e
 
-def gerar_grafico(df, colunas, rpm_col="RPM"):
-    # divide colunas
+def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
+    """
+    Dual-axis:
+     - RPM no eixo Y2 (direito), escala real.
+     - Outras séries no Y1 (esquerdo), com Lambda 1 multiplicado por 1000.
+    """
     left_cols = [c for c in colunas if c != rpm_col]
-
     fig = go.Figure()
 
-    # traça cada série no eixo log (y1)
+    # 1) Plotar cada série do eixo esquerdo
     for c in left_cols:
-        serie = pd.to_numeric(df[c], errors="coerce")
-        # evita zeros no log (substitui por NaN)
-        serie = serie.replace(0, pd.NA)
+        real = pd.to_numeric(df[c], errors="coerce")
+        if c == lambda_col:
+            y_plot = real * 1000
+            hover_template = (
+                f"<b>{c}</b><br>"
+                "Real: %{customdata:.3f}<br>"
+                "Plotado: %{y:.0f}<extra></extra>"
+            )
+        else:
+            y_plot = real
+            hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
+
         fig.add_trace(go.Scatter(
             x=df.index,
-            y=serie,
+            y=y_plot,
             name=c,
             yaxis="y1",
             mode="lines",
-            connectgaps=True,
-            hovertemplate=f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
+            connectgaps=False,
+            customdata=real,
+            hovertemplate=hover_template
         ))
 
-    # plota RPM no eixo direito normal
+    # 2) Plotar RPM no eixo direito
     if rpm_col in colunas and rpm_col in df.columns:
         rpm = pd.to_numeric(df[rpm_col], errors="coerce")
         fig.add_trace(go.Scatter(
@@ -117,20 +130,32 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             yaxis="y2",
             line=dict(color="crimson", width=2),
             mode="lines",
-            connectgaps=True,
+            connectgaps=False,
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # layout com log scale no y1
+    # 3) Calcular um nice_max baseado no maior pico de Y1
+    # (já que Lambda agora está em mesma ordem de grandeza)
+    max_y1 = 0
+    for trace in fig.data:
+        if trace.yaxis == "y1":
+            mx = max([v for v in trace.y if v is not None])
+            max_y1 = max(max_y1, mx)
+    nice_max = None
+    if max_y1:
+        import math
+        mag = 10 ** math.floor(math.log10(max_y1))
+        nice_max = math.ceil(max_y1 / mag) * mag
+
+    # 4) Layout
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Valores (escala log)",
-            type="log",
+            title="Valores (Y1)",
             side="left",
             showgrid=True,
-            gridcolor="#999999",
-            zeroline=False
+            gridcolor="#e5e5e5",
+            range=[0, nice_max] if nice_max else None
         ),
         yaxis2=dict(
             title=rpm_col,
@@ -141,16 +166,14 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
         ),
         legend=dict(
             orientation="v",
-            x=0,
-            y=1,
-            xanchor="left",
-            yanchor="top",
-            bgcolor="rgba(0,0,0,0.2)"
+            x=0, y=1,
+            xanchor="left", yanchor="top",
+            bgcolor="rgba(255,255,255,0.2)"
         ),
         margin=dict(l=50, r=50, t=30, b=40),
         height=450,
         hovermode="x unified",
-        template="plotly_dark"
+        template="plotly_white"
     )
 
     st.plotly_chart(fig, use_container_width=True)
