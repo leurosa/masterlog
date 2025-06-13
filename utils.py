@@ -98,16 +98,15 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
     # 1) Plotar cada série do eixo esquerdo
     for c in left_cols:
         real = pd.to_numeric(df[c], errors="coerce")
-    
+
         if c == lambda_col:
-            # Para Lambda 1, multiplica e formata hover com 2 casas
+            # Lambda 1 multiplicado por 1000, hover com 2 casas
             y_plot = real * 1000
             hover_template = "<b>Lambda 1</b><br>Valor: %{customdata:.2f}<extra></extra>"
         else:
-            # Para as outras séries, mantém valor real
             y_plot = real
             hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
-    
+
         fig.add_trace(go.Scatter(
             x=df.index,
             y=y_plot,
@@ -118,35 +117,34 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
             customdata=real,
             hovertemplate=hover_template
         ))
-    
-        # 2) Plotar RPM no eixo direito
-        if rpm_col in colunas and rpm_col in df.columns:
-            rpm = pd.to_numeric(df[rpm_col], errors="coerce")
-            fig.add_trace(go.Scatter(
-                x=df.index,
-                y=rpm,
-                name=rpm_col,
-                yaxis="y2",
-                line=dict(color="crimson", width=2),
-                mode="lines",
-                connectgaps=False,
-                hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
-            ))
 
-    # 3) Calcular um nice_max baseado no maior pico de Y1
-    # (já que Lambda agora está em mesma ordem de grandeza)
+    # 2) Fora do laço, plotar o RPM uma vez no eixo direito
+    if rpm_col in colunas and rpm_col in df.columns:
+        rpm = pd.to_numeric(df[rpm_col], errors="coerce")
+        fig.add_trace(go.Scatter(
+            x=df.index,
+            y=rpm,
+            name=rpm_col,
+            yaxis="y2",
+            line=dict(color="crimson", width=2),
+            mode="lines",
+            connectgaps=False,
+            hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
+        ))
+
+    # 3) Calcular nice_max para Y1
     max_y1 = 0
     for trace in fig.data:
         if trace.yaxis == "y1":
-            mx = max([v for v in trace.y if v is not None])
-            max_y1 = max(max_y1, mx)
+            vals = [v for v in trace.y if v is not None]
+            if vals:
+                max_y1 = max(max_y1, max(vals))
     nice_max = None
     if max_y1:
-        import math
-        mag = 10 ** math.floor(math.log10(max_y1))
-        nice_max = math.ceil(max_y1 / mag) * mag
+        magnitude = 10 ** math.floor(math.log10(max_y1))
+        nice_max  = math.ceil(max_y1 / magnitude) * magnitude
 
-    # 4) Layout
+    # 4) Layout final
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
