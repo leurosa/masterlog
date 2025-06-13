@@ -87,12 +87,20 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
-
-    # 1) Define colunas do eixo esquerdo
+    """
+    Dual‐axis:
+     - RPM no eixo Y2 (direito), escala real.
+     - Outras séries no Y1 (esquerdo):
+         * "Lambda 1" e "Lambda Target": ×1000.
+         * "MAP" e "Boost": ×40.
+         * Demais: valor real.
+       Hover sempre mostra o valor real (MAP/Boost sem decimais).
+    """
+    # 1) Colunas para o eixo esquerdo
     left_cols = [c for c in colunas if c != rpm_col]
 
-    # 2) Multiplicadores específicos
-   def get_multiplier(col_name):
+    # 2) Helper para escolher multiplicador
+    def get_multiplier(col_name):
         if "Lambda 1" in col_name or "Lambda Target" in col_name:
             return 1000
         if "MAP" in col_name:
@@ -101,15 +109,20 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             return 40
         return 1
 
+    # 3) Inicializa figura
+    fig = go.Figure()
+
+    # 4) Plot das séries do Y1
     for c in left_cols:
         real = pd.to_numeric(df[c], errors="coerce")
         mult = get_multiplier(c)
         y_plot = real * mult
-        # hover template personalizado
-        if c in ("MAP", "Boost"):
-            hover_template = f"<b>{c}</b><br>Valor real: %{{customdata:.0f}}<extra></extra>"
+
+        # formatação do hover
+        if "MAP" in c or "Boost" in c:
+            hover = f"<b>{c}</b><br>Valor real: %{{customdata:.0f}}<extra></extra>"
         else:
-            hover_template = f"<b>{c}</b><br>Valor real: %{{customdata:.2f}}<extra></extra>"
+            hover = f"<b>{c}</b><br>Valor real: %{{customdata:.2f}}<extra></extra>"
 
         fig.add_trace(go.Scatter(
             x=df.index,
@@ -119,10 +132,10 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             mode="lines",
             connectgaps=False,
             customdata=real,
-            hovertemplate=hover_template
+            hovertemplate=hover
         ))
 
-    # 4) Plota RPM no eixo Y2 (apenas uma vez)
+    # 5) Plot do RPM no Y2 (once)
     if rpm_col in colunas and rpm_col in df.columns:
         rpm = pd.to_numeric(df[rpm_col], errors="coerce")
         fig.add_trace(go.Scatter(
@@ -136,7 +149,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # 5) Calcula limite superior “bonito” para Y1
+    # 6) Calcula limite “bonito” para Y1
     max_y1 = 0
     for tr in fig.data:
         if tr.yaxis == "y1":
@@ -148,7 +161,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
         magnitude = 10 ** math.floor(math.log10(max_y1))
         nice_max  = math.ceil(max_y1 / magnitude) * magnitude
 
-    # 6) Atualiza layout
+    # 7) Layout final
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
