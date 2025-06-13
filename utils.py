@@ -161,17 +161,11 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
             showgrid=False,
             autorange=True
         ),
-        legend=dict(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        margin=dict(l=50, r=50, t=30, b=40),
-        height=450,
-        hovermode="x unified",
-        template="plotly_white"
-        ),
-        margin=dict(l=50, r=50, t=30, b=40),
-        height=450,
-        hovermode="x unified",
-        template="plotly_white"
-    )
+            margin=dict(l=50, r=50, t=30, b=40),
+            height=450,
+            hovermode="x unified",
+            template="plotly_white"
+        )
 
     st.plotly_chart(fig, use_container_width=True)
