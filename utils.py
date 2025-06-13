@@ -116,9 +116,9 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
 
         # Escolhe formatação de hover conforme a coluna
         if c == "MAP":
-            hover = f"<b>{c}</b><br>Valor real: %{{customdata:.0f}}<extra></extra>"
+            hover = f"<b>{c}</b><br>Valor: %{{customdata:.0f}}<extra></extra>"
         else:
-            hover = f"<b>{c}</b><br>Valor real: %{{customdata:.2f}}<extra></extra>"
+            hover = f"<b>{c}</b><br>Valor: %{{customdata:.2f}}<extra></extra>"
 
         fig.add_trace(go.Scatter(
             x=df.index, y=y_plot, name=c, yaxis="y1",
