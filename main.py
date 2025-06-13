@@ -4,12 +4,7 @@ import os
 from utils import processar_multiplos_logs, gerar_grafico
 from ui import mostrar_previsualizacao
 
-st.set_page_config(
-    page_title="Master Log Viewer",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+
 creds = st.secrets.get("credentials", {})
 if not creds:
     st.error("❌ Seção [credentials] não encontrada em Secrets")
@@ -38,6 +33,12 @@ if not st.session_state.logged_in:
 
 
 st.sidebar.success(f"✔️ Logado como `{st.session_state.username}`")
+st.set_page_config(
+    page_title="Master Log Viewer",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 st.title("📊 Master Log Viewer")
 
 # 2) upload
