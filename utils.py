@@ -87,15 +87,7 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
-    """
-    Dual‐axis:
-     - RPM no eixo Y2 (direito), escala real.
-     - Outras séries no Y1 (esquerdo):
-         * "Lambda 1" e "Lambda Target": multiplica por 1000.
-         * "MAP": multiplica por 20.
-         * Demais: valor real.
-       Hover sempre mostra o valor real com 2 casas.
-    """
+
     # Colunas do Y1
     left_cols = [c for c in colunas if c != rpm_col]
 
@@ -116,7 +108,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
         y_plot = real * mult
 
         # Escolhe formatação de hover conforme a coluna
-        if c == "MAP & Boost":
+        if c == ("MAP", "Boost"):
             hover = f"<b>{c}</b><br>Valor: %{{customdata:.0f}}<extra></extra>"
         else:
             hover = f"<b>{c}</b><br>Valor: %{{customdata:.2f}}<extra></extra>"
