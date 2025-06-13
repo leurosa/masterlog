@@ -87,15 +87,8 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
-    """
-    Dual‐axis:
-     - RPM no eixo Y2, escala real.
-     - Outras séries no Y1:
-         * Lambda 1 e Lambda Target multiplicados por 1000.
-         * Hover mostra apenas “Valor real: xx.xx”.
-    """
     left_cols  = [c for c in colunas if c != rpm_col]
-    special    = {"Lambda 1", "Lambda Target"}
+    special    = {"Lambda 1", "Lambda Target","MAP"}
     multiplier = 1000
     fig = go.Figure()
 
