@@ -8,8 +8,8 @@ from ui import mostrar_previsualizacao
 st.set_page_config(
     page_title="Master Log Viewer",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
 # 2) BUSCA CREDENCIAIS NO SECRETS (Streamlit Cloud)
@@ -39,6 +39,18 @@ def show_login():
 
 if not st.session_state.logged_in:
     show_login()
+   
+st.markdown(
+    """
+    <style>
+      .block-container {
+        max-width: 100% !important;
+        padding: 1rem 2rem !important;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # 5) APP PRINCIPAL (só roda quando logado)
 st.sidebar.success(f"✔️ Logado como `{st.session_state.username}`")
