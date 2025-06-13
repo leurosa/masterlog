@@ -140,6 +140,8 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             showgrid=True,
             gridcolor="#999999",
             range=[0, 1]
+            showticklabels=False,
+            ticks=""  
         ),
         yaxis2=dict(
             title=rpm_col,
@@ -148,7 +150,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             showgrid=False,
             autorange=True
         ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=1),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(l=50, r=50, t=30, b=40),
         height=450,
         hovermode="x unified",
