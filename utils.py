@@ -119,33 +119,68 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 
-def gerar_grafico(df, colunas):
+def gerar_grafico(df, colunas, rpm_col="RPM"):
+    """
+    Se 'RPM' estiver em colunas, plota em eixo Y2 (direita).
+    As demais colunas vão para o eixo Y1 (esquerda).
+    """
     fig = go.Figure()
+
+    # 1) traços para todas as colunas, menos RPM, usando yaxis="y1"
     for col in colunas:
-        # se for VE Value e existir VE Corrigido, só plota os válidos
-        if col == "VE Value" and "VE Corrigido" in df.columns:
-            mask   = df["VE Corrigido"].notna()
-            x_plot = df.index[mask]
-            y_plot = df.loc[mask, "VE Value"]
-        else:
-            x_plot = df.index
-            y_plot = df[col]
+        if col != rpm_col:
+            fig.add_trace(
+                go.Scatter(
+                    x=df.index,
+                    y=df[col],
+                    name=col,
+                    yaxis="y1",
+                    mode="lines",
+                    connectgaps=False,
+                    hovertemplate=f"<b>{col}</b><br>Valor: %{{y}}<extra></extra>"
+                )
+            )
 
-        fig.add_trace(go.Scatter(
-            x=x_plot,
-            y=y_plot,
-            mode='lines',
-            name=col,
-            hovertemplate=f"<b>{col}</b><br>Valor: %{{y}}<extra></extra>",
-            connectgaps=False
-        ))
+    # 2) se RPM estiver na lista, plota esse trace em yaxis="y2"
+    if rpm_col in colunas and rpm_col in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=df.index,
+                y=df[rpm_col],
+                name=rpm_col,
+                yaxis="y2",
+                line=dict(color="crimson", width=2),
+                mode="lines",
+                connectgaps=False,
+                hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
+            )
+        )
 
+    # 3) configura layout com dois eixos
     fig.update_layout(
-        height=500,
-        margin=dict(l=20, r=20, t=30, b=40),
-        hovermode='x unified',
-        xaxis_title="Tempo (pontos de log)",
-        yaxis_title="Valor",
-        template='plotly_white'
+        xaxis=dict(title="Tempo (pontos de log)"),
+        yaxis=dict(
+            title="Outros sinais",
+            side="left",
+            showgrid=True,
+        ),
+        yaxis2=dict(
+            title=rpm_col,
+            overlaying="y",
+            side="right",
+            showgrid=False,
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        margin=dict(l=40, r=40, t=30, b=40),
+        height=450,
+        template="plotly_white",
+        hovermode="x unified",
     )
+
     st.plotly_chart(fig, use_container_width=True)
