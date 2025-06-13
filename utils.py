@@ -179,6 +179,8 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             side="right",
             showgrid=False,
             autorange=True
+            showticklabels=False,
+            ticks=""
         ),
         legend=dict(
             orientation="v",
