@@ -141,7 +141,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             gridcolor="#999999",
             range=[0, 1]
             showticklabels=False,
-            ticks=""  
+            ticks="",
         ),
         yaxis2=dict(
             title=rpm_col,
