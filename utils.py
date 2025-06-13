@@ -141,7 +141,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             title="Séries normalizadas [0–1]",
             side="left",
             showgrid=True,
-            gridcolor="#e5e5e5",
+            gridcolor="#999999",
             range=[0, 1]
         ),
         yaxis2=dict(
