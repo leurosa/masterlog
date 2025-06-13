@@ -1,10 +1,12 @@
 
 import streamlit as st
 
-def mostrar_previsualizacao(df_visivel, nome_log):
+def mostrar_previsualizacao(df_visivel, key_prefix):
     n_linhas = st.slider(
-        "🔍 Número de linhas para visualizar",
-        min_value=5, max_value=2000, value=20, step=5,
-        key=f"slider_{nome_log}"
+        "Linhas para mostrar",
+        min_value=0,
+        max_value=len(df_visivel),
+        value=10,
+        key=f"{key_prefix}_slider"
     )
-    st.dataframe(df_visivel.head(n_linhas), use_container_width=True)
+    st.dataframe(df_visivel.head(n_linhas))
