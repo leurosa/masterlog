@@ -87,54 +87,79 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
     """
-    Dual-axis: RPM no eixo direito; outras séries no esquerdo, 
+    Dual-axis: RPM no eixo direito; outras séries no esquerdo,
     escaladas para que cada pico atinja o topo do eixo Y1.
     Hover mostra o valor real.
     """
     left_cols = [c for c in colunas if c != rpm_col]
-    # calculo máximos
-    max_vals   = {c: df[c].max() for c in left_cols} if left_cols else {}
+
+    # 1) Converte cada coluna à esquerda para numérico (coerce) e pega o max
+    max_vals = {}
+    for c in left_cols:
+        # converter ignorando não-números
+        num = pd.to_numeric(df[c], errors="coerce")
+        if not num.empty:
+            max_vals[c] = num.max()
     global_max = max(max_vals.values()) if max_vals else None
 
     fig = go.Figure()
-    # traçar cada série esquerda escalada
+
+    # 2) traçar cada série esquerda escalada
     for c in left_cols:
-        factor = (global_max / max_vals[c]) if (global_max and max_vals[c]) else 1
-        scaled = df[c] * factor
+        factor = (global_max / max_vals[c]) if (global_max and max_vals.get(c)) else 1
+        # converter de novo para garantir
+        real = pd.to_numeric(df[c], errors="coerce")
+        scaled = real * factor
+
         fig.add_trace(go.Scatter(
-            x=df.index, y=scaled, name=c, yaxis="y1",
-            mode="lines", connectgaps=False,
-            customdata=df[c],
+            x=df.index,
+            y=scaled,
+            name=c,
+            yaxis="y1",
+            mode="lines",
+            connectgaps=False,
+            customdata=real,
             hovertemplate=(
                 f"<b>{c}</b><br>"
                 "Real: %{customdata}<br>"
                 "Escalado: %{y:.2f}<extra></extra>"
             )
         ))
-    # traçar RPM normal
+
+    # 3) traçar RPM normalmente no eixo direito
     if rpm_col in colunas and rpm_col in df.columns:
         fig.add_trace(go.Scatter(
-            x=df.index, y=df[rpm_col], name=rpm_col, yaxis="y2",
+            x=df.index,
+            y=pd.to_numeric(df[rpm_col], errors="coerce"),
+            name=rpm_col,
+            yaxis="y2",
             line=dict(color="crimson", width=2),
-            mode="lines", connectgaps=False,
+            mode="lines",
+            connectgaps=False,
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # layout com range automático no y1
+    # 4) layout com range automático no y1
     layout = dict(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
             title="Séries escaladas",
             side="left",
             showgrid=True,
-            range=[0, global_max*1.05] if global_max else None
+            range=[0, global_max * 1.05] if global_max else None
         ),
         yaxis2=dict(
-            title=rpm_col if rpm_col else "", overlaying="y", side="right", showgrid=False
+            title=rpm_col,
+            overlaying="y",
+            side="right",
+            showgrid=False,
+            autorange=True
         ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(l=40, r=40, t=30, b=40),
-        height=450, hovermode="x unified", template="plotly_white"
+        height=450,
+        hovermode="x unified",
+        template="plotly_white"
     )
     fig.update_layout(**layout)
 
