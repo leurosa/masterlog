@@ -102,7 +102,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
             y_plot = real * 1000
             hover_template = (
                 f"<b>{c}</b><br>"
-                "Real: %{customdata:.3f}<br>"
+                "Real: %{customdata:.3f}"
                            )
         else:
             y_plot = real
