@@ -87,46 +87,48 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
     """
-    Dual-axis: RPM no eixo direito; outras séries no esquerdo,
-    escaladas para que cada pico atinja o topo do eixo Y1.
-    Hover mostra o valor real.
+    Dual-axis: RPM no eixo direito; outras séries no esquerdo, 
+    com eixo Y1 arredondado e ticks “bonitos”.
     """
+    # 1) Seleção de colunas
     left_cols = [c for c in colunas if c != rpm_col]
 
-    # 1) Converte cada coluna à esquerda para numérico (coerce) e pega o max
-    max_vals = {}
-    for c in left_cols:
-        # converter ignorando não-números
-        num = pd.to_numeric(df[c], errors="coerce")
-        if not num.empty:
-            max_vals[c] = num.max()
-    global_max = max(max_vals.values()) if max_vals else None
+    # 2) Cálculo do máximo real para o eixo esquerdo
+    max_left = None
+    if left_cols:
+        vals = []
+        for c in left_cols:
+            num = pd.to_numeric(df[c], errors="coerce")
+            if not num.empty:
+                vals.append(num.max())
+        if vals:
+            max_left = max(vals)
+
+    # 3) Arredonda max_left para “número bonito”
+    if max_left:
+        magnitude = 10 ** math.floor(math.log10(max_left))
+        nice_max = math.ceil(max_left / magnitude) * magnitude
+        # cria de 5 a 8 intervalos
+        dtick = nice_max / 5
+    else:
+        nice_max = None
+        dtick = None
 
     fig = go.Figure()
 
-    # 2) traçar cada série esquerda escalada
+    # 4) Plot das séries reais no eixo esquerdo
     for c in left_cols:
-        factor = (global_max / max_vals[c]) if (global_max and max_vals.get(c)) else 1
-        # converter de novo para garantir
-        real = pd.to_numeric(df[c], errors="coerce")
-        scaled = real * factor
-
         fig.add_trace(go.Scatter(
             x=df.index,
-            y=scaled,
+            y=pd.to_numeric(df[c], errors="coerce"),
             name=c,
             yaxis="y1",
             mode="lines",
             connectgaps=False,
-            customdata=real,
-            hovertemplate=(
-                f"<b>{c}</b><br>"
-                "Real: %{customdata}<br>"
-                "Escalado: %{y:.2f}<extra></extra>"
-            )
+            hovertemplate=f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # 3) traçar RPM normalmente no eixo direito
+    # 5) Plot da RPM no eixo direito
     if rpm_col in colunas and rpm_col in df.columns:
         fig.add_trace(go.Scatter(
             x=df.index,
@@ -139,14 +141,17 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # 4) layout com range automático no y1
-    layout = dict(
+    # 6) Layout com eixo Y1 “bonito”
+    fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Séries escaladas",
+            title="Valores",
             side="left",
             showgrid=True,
-            range=[0, global_max * 1.05] if global_max else None
+            gridcolor="#e5e5e5",
+            zeroline=False,
+            range=[0, nice_max] if nice_max else None,
+            dtick=dtick
         ),
         yaxis2=dict(
             title=rpm_col,
@@ -156,11 +161,10 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             autorange=True
         ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        margin=dict(l=40, r=40, t=30, b=40),
+        margin=dict(l=50, r=50, t=30, b=40),
         height=450,
         hovermode="x unified",
         template="plotly_white"
     )
-    fig.update_layout(**layout)
 
     st.plotly_chart(fig, use_container_width=True)
