@@ -92,21 +92,19 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
     left_cols = [c for c in colunas if c != rpm_col]
 
     # 2) Multiplicadores específicos
-    multipliers = {
-        "Lambda 1": 1000,
-        "Lambda Target": 1000,
-        "MAP": 40,
-        "Boost": 40
-    }
+   def get_multiplier(col_name):
+        if "Lambda 1" in col_name or "Lambda Target" in col_name:
+            return 1000
+        if "MAP" in col_name:
+            return 40
+        if "Boost" in col_name:
+            return 40
+        return 1
 
-    fig = go.Figure()
-
-    # 3) Plota cada série no eixo Y1
     for c in left_cols:
         real = pd.to_numeric(df[c], errors="coerce")
-        mult = multipliers.get(c, 1)
+        mult = get_multiplier(c)
         y_plot = real * mult
-
         # hover template personalizado
         if c in ("MAP", "Boost"):
             hover_template = f"<b>{c}</b><br>Valor real: %{{customdata:.0f}}<extra></extra>"
