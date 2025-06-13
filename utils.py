@@ -117,7 +117,6 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             hovertemplate=(
                 f"<b>{c}</b><br>"
                 "Valor real: %{customdata}<br>"
-                "Normalizado: %{y:.2f}<extra></extra>"
             )
         ))
     
