@@ -87,61 +87,50 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
-    
-    # 1) Divide colunas
+    # divide colunas
     left_cols = [c for c in colunas if c != rpm_col]
-    
-    # 2) Prepara o layout do gráfico
+
     fig = go.Figure()
 
-    # 3) Plota séries normalizadas no eixo esquerdo
+    # traça cada série no eixo log (y1)
     for c in left_cols:
-        # converte e calcula min/max
-        series = pd.to_numeric(df[c], errors="coerce")
-        mn, mx = series.min(), series.max()
-        if pd.isna(mn) or pd.isna(mx) or mx == mn:
-            norm = series * 0  # tudo zero se não puder normalizar
-        else:
-            norm = (series - mn) / (mx - mn)
+        serie = pd.to_numeric(df[c], errors="coerce")
+        # evita zeros no log (substitui por NaN)
+        serie = serie.replace(0, pd.NA)
         fig.add_trace(go.Scatter(
             x=df.index,
-            y=norm,
+            y=serie,
             name=c,
             yaxis="y1",
             mode="lines",
-            connectgaps=False,
-            customdata=series,
-            hovertemplate=(
-                f"<b>{c}</b><br>"
-                "Valor real: %{customdata}<br>"
-            )
+            connectgaps=True,
+            hovertemplate=f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
         ))
-    
-    # 4) Plota RPM real no eixo direito
+
+    # plota RPM no eixo direito normal
     if rpm_col in colunas and rpm_col in df.columns:
-        rpm_series = pd.to_numeric(df[rpm_col], errors="coerce")
+        rpm = pd.to_numeric(df[rpm_col], errors="coerce")
         fig.add_trace(go.Scatter(
             x=df.index,
-            y=rpm_series,
+            y=rpm,
             name=rpm_col,
             yaxis="y2",
             line=dict(color="crimson", width=2),
             mode="lines",
-            connectgaps=False,
+            connectgaps=True,
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # 5) Atualiza layout
+    # layout com log scale no y1
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Valores",
+            title="Valores (escala log)",
+            type="log",
             side="left",
             showgrid=True,
             gridcolor="#999999",
-            range=[0, 1],
-            showticklabels=False,
-            ticks=""
+            zeroline=False
         ),
         yaxis2=dict(
             title=rpm_col,
@@ -151,17 +140,17 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             autorange=True
         ),
         legend=dict(
-        orientation="v",
-        x=0,
-        y=1,
-        xanchor="left",
-        yanchor="top",
-        bgcolor="rgba(255,255,255,0.8)"
-    ),
+            orientation="v",
+            x=0,
+            y=1,
+            xanchor="left",
+            yanchor="top",
+            bgcolor="rgba(0,0,0,0.2)"
+        ),
         margin=dict(l=50, r=50, t=30, b=40),
         height=450,
         hovermode="x unified",
-        template="plotly_white"
+        template="plotly_dark"
     )
 
     st.plotly_chart(fig, use_container_width=True)
