@@ -98,26 +98,16 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
     # 1) Plotar cada série do eixo esquerdo
     for c in left_cols:
         real = pd.to_numeric(df[c], errors="coerce")
+    
         if c == lambda_col:
-            # Hover só com o nome em negrito e o valor real com 2 casas
+            # Para Lambda 1, multiplica e formata hover com 2 casas
+            y_plot = real * 1000
             hover_template = "<b>Lambda 1</b><br>Valor: %{customdata:.2f}<extra></extra>"
         else:
-            hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
-        
-        fig.add_trace(go.Scatter(
-            x=df.index,
-            y=y_plot,
-            name=c,
-            yaxis="y1",
-            mode="lines",
-            connectgaps=False,
-            customdata=real,
-            hovertemplate=hover_template
-        ))
-        else:
+            # Para as outras séries, mantém valor real
             y_plot = real
             hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
-
+    
         fig.add_trace(go.Scatter(
             x=df.index,
             y=y_plot,
@@ -128,20 +118,20 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
             customdata=real,
             hovertemplate=hover_template
         ))
-
-    # 2) Plotar RPM no eixo direito
-    if rpm_col in colunas and rpm_col in df.columns:
-        rpm = pd.to_numeric(df[rpm_col], errors="coerce")
-        fig.add_trace(go.Scatter(
-            x=df.index,
-            y=rpm,
-            name=rpm_col,
-            yaxis="y2",
-            line=dict(color="crimson", width=2),
-            mode="lines",
-            connectgaps=False,
-            hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
-        ))
+    
+        # 2) Plotar RPM no eixo direito
+        if rpm_col in colunas and rpm_col in df.columns:
+            rpm = pd.to_numeric(df[rpm_col], errors="coerce")
+            fig.add_trace(go.Scatter(
+                x=df.index,
+                y=rpm,
+                name=rpm_col,
+                yaxis="y2",
+                line=dict(color="crimson", width=2),
+                mode="lines",
+                connectgaps=False,
+                hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
+            ))
 
     # 3) Calcular um nice_max baseado no maior pico de Y1
     # (já que Lambda agora está em mesma ordem de grandeza)
