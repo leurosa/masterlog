@@ -87,10 +87,7 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
         return None, e
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
-    """
-    Dual‐axis: RPM no eixo Y2 com escala real; demais séries normalizadas
-    para [0,1] no eixo Y1, mas o hover mostra o valor real.
-    """
+    
     # 1) Divide colunas
     left_cols = [c for c in colunas if c != rpm_col]
     
@@ -138,7 +135,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Séries normalizadas [0–1]",
+            title="Valores",
             side="left",
             showgrid=True,
             gridcolor="#999999",
