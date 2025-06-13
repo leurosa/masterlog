@@ -151,7 +151,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
             title="Valores (Y1)",
             side="left",
             showgrid=True,
-            gridcolor="#e5e5e5",
+            gridcolor="#949494",
             range=[0, nice_max] if nice_max else None
         ),
         yaxis2=dict(
