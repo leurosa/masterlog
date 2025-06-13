@@ -74,9 +74,9 @@ if arquivo:
                     key_prefix=log["key"]
                 )
                 eixo_y = st.multiselect(
-                    "📊 Selecione até 4 colunas",
+                    "📊 Selecione até 8 colunas",
                     log["df_visivel"].columns,
-                    max_selections=4,
+                    max_selections=8,
                     key=f"multiselect_{log['key']}"
                 )
                 if eixo_y:
