@@ -92,7 +92,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
     left_cols = [c for c in colunas if c != rpm_col]
 
     # Dicionário de multiplicadores
-    multipliers = {
+     multipliers = {
         "Lambda 1": 1000,
         "Lambda Target": 1000,
         "MAP": 40,
@@ -108,15 +108,20 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
         y_plot = real * mult
 
         # Escolhe formatação de hover conforme a coluna
-        if c == ("MAP", "Boost"):
+        if c in ("MAP", "Boost"):
             hover = f"<b>{c}</b><br>Valor: %{{customdata:.0f}}<extra></extra>"
         else:
             hover = f"<b>{c}</b><br>Valor: %{{customdata:.2f}}<extra></extra>"
 
         fig.add_trace(go.Scatter(
-            x=df.index, y=y_plot, name=c, yaxis="y1",
-            mode="lines", connectgaps=False,
-            customdata=real, hovertemplate=hover
+            x=df.index,
+            y=y_plot,
+            name=c,
+            yaxis="y1",
+            mode="lines",
+            connectgaps=False,
+            customdata=real,
+            hovertemplate=hover
         ))
 
     # 2) Plotar o RPM no eixo direito (uma vez)
