@@ -93,16 +93,18 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
      - Outras séries no Y1 (esquerdo), com Lambda 1 multiplicado por 1000.
     """
     left_cols = [c for c in colunas if c != rpm_col]
+    special     = {"Lambda 1", "Lambda Target"}
     fig = go.Figure()
 
     # 1) Plotar cada série do eixo esquerdo
     for c in left_cols:
         real = pd.to_numeric(df[c], errors="coerce")
-
-        if c == lambda_col:
-            # Lambda 1 multiplicado por 1000, hover com 2 casas
+        if c in special:
             y_plot = real * 1000
-            hover_template = "<b>Lambda 1</b><br>Valor: %{customdata:.2f}<extra></extra>"
+            hover = (
+                f"<b>{c}</b><br>"
+                "Valor real: %{customdata:.2f}<br>"
+            )
         else:
             y_plot = real
             hover_template = f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
