@@ -152,7 +152,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM", lambda_col="Lambda 1"):
             side="left",
             showgrid=True,
             gridcolor="#949494",
-            range=[0, nice_max] if nice_max else None
+            range=[0, nice_max] if nice_max else None,
             showticklabels=False,
             ticks=""
         ),
