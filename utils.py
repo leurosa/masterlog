@@ -143,13 +143,10 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Valores",
-            side="left",
+            title="Valores (log scale)",
+            type="log",
             showgrid=True,
-            gridcolor="#e5e5e5",
-            zeroline=False,
-            range=[0, nice_max] if nice_max else None,
-            dtick=dtick
+            gridcolor="#e5e5e5"
         ),
         yaxis2=dict(
             title=rpm_col,
