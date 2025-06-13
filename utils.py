@@ -150,7 +150,14 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             showgrid=False,
             autorange=True
         ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(
+        orientation="v",
+        x=0,
+        y=1,
+        xanchor="left",
+        yanchor="top",
+        bgcolor="rgba(255,255,255,0.8)"
+    ),
         margin=dict(l=50, r=50, t=30, b=40),
         height=450,
         hovermode="x unified",
