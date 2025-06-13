@@ -88,49 +88,45 @@ def processar_multiplos_logs(arquivo, combustivel_extra=1.0):
 
 def gerar_grafico(df, colunas, rpm_col="RPM"):
     """
-    Dual-axis: RPM no eixo direito; outras séries no esquerdo, 
-    com eixo Y1 “bonito” (máximo arredondado e ticks uniformes).
+    Dual‐axis: RPM no eixo Y2 com escala real; demais séries normalizadas
+    para [0,1] no eixo Y1, mas o hover mostra o valor real.
     """
-    # 1) Colunas do lado esquerdo
+    # 1) Divide colunas
     left_cols = [c for c in colunas if c != rpm_col]
-
-    # 2) Calcula o máximo real
-    max_left = None
-    if left_cols:
-        vals = []
-        for c in left_cols:
-            num = pd.to_numeric(df[c], errors="coerce")
-            if not num.empty:
-                vals.append(num.max())
-        if vals:
-            max_left = max(vals)
-
-    # 3) Arredonda para um “número bonito” e define dtick
-    if max_left:
-        magnitude = 10 ** math.floor(math.log10(max_left))
-        nice_max  = math.ceil(max_left / magnitude) * magnitude
-        dtick     = nice_max / 5
-    else:
-        nice_max = None
-        dtick    = None
-
-    # 4) Cria a figura e plota as séries reais
+    
+    # 2) Prepara o layout do gráfico
     fig = go.Figure()
+
+    # 3) Plota séries normalizadas no eixo esquerdo
     for c in left_cols:
+        # converte e calcula min/max
+        series = pd.to_numeric(df[c], errors="coerce")
+        mn, mx = series.min(), series.max()
+        if pd.isna(mn) or pd.isna(mx) or mx == mn:
+            norm = series * 0  # tudo zero se não puder normalizar
+        else:
+            norm = (series - mn) / (mx - mn)
         fig.add_trace(go.Scatter(
             x=df.index,
-            y=pd.to_numeric(df[c], errors="coerce"),
+            y=norm,
             name=c,
             yaxis="y1",
             mode="lines",
             connectgaps=False,
-            hovertemplate=f"<b>{c}</b><br>Valor: %{{y}}<extra></extra>"
+            customdata=series,
+            hovertemplate=(
+                f"<b>{c}</b><br>"
+                "Valor real: %{customdata}<br>"
+                "Normalizado: %{y:.2f}<extra></extra>"
+            )
         ))
-    # RPM no eixo direito
+    
+    # 4) Plota RPM real no eixo direito
     if rpm_col in colunas and rpm_col in df.columns:
+        rpm_series = pd.to_numeric(df[rpm_col], errors="coerce")
         fig.add_trace(go.Scatter(
             x=df.index,
-            y=pd.to_numeric(df[rpm_col], errors="coerce"),
+            y=rpm_series,
             name=rpm_col,
             yaxis="y2",
             line=dict(color="crimson", width=2),
@@ -139,17 +135,15 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
             hovertemplate=f"<b>{rpm_col}</b><br>Valor: %{{y}}<extra></extra>"
         ))
 
-    # 5) Layout com eixo Y1 “bonito”
+    # 5) Atualiza layout
     fig.update_layout(
         xaxis=dict(title="Tempo (pontos de log)"),
         yaxis=dict(
-            title="Valores",
+            title="Séries normalizadas [0–1]",
             side="left",
             showgrid=True,
             gridcolor="#e5e5e5",
-            zeroline=False,
-            range=[0, nice_max] if nice_max else None,
-            dtick=dtick
+            range=[0, 1]
         ),
         yaxis2=dict(
             title=rpm_col,
