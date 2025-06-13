@@ -80,4 +80,4 @@ if arquivo:
                     key=f"multiselect_{log['key']}"
                 )
                 if eixo_y:
-                    gerar_grafico(log["df"], eixo_y)
+                    gerar_grafico(log["df"], eixo_y, rpm_col="RPM")
