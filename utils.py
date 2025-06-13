@@ -116,7 +116,7 @@ def gerar_grafico(df, colunas, rpm_col="RPM"):
 
         hover_template = (
             f"<b>{c}</b><br>"
-            "Valor real: %{customdata:.2f}<extra></extra>"
+            "Valor: %{customdata:.2f}<extra></extra>"
         )
 
         fig.add_trace(go.Scatter(
